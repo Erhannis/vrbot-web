@@ -48,7 +48,7 @@ let gd = (
     const normOfDerivate = norm_of_vector(derivate);
 
     if (normOfDerivate < PRECISION) {
-        console.log(`PRECISION finished early with ${j+1} iters`);
+        //console.log(`PRECISION finished early with ${j+1} iters`);
         break;
     }
 
@@ -63,7 +63,7 @@ let gd = (
     Error_n_minus_1 = get_error(...x_n_minus_1);
     x_n = Object.assign([], x_n_minus_1);
     if (Error_n_minus_1 < TOLERANCE) {
-        console.log(`TOLERANCE finished early with ${j+1} iters`);
+        //console.log(`TOLERANCE finished early with ${j+1} iters`);
         break;
     }
   }
@@ -127,7 +127,7 @@ function seek([tx,ty,tz],init=[0.34,0.217,0.294]) {
     //     {bounds: [[-Math.PI/2, Math.PI/2], [-Math.PI/2, Math.PI/2], [-Math.PI/2, Math.PI/2]]}
     // );
 
-    console.log(result, new THREE.Vector3(0,0,0).applyMatrix4(armMtx(...result)), func(...result));
+    //console.log(result, new THREE.Vector3(0,0,0).applyMatrix4(armMtx(...result)), func(...result));
     return result;
 }
 

@@ -1,35 +1,9 @@
 <html>
-    <script src="main.js"></script>
-    <body>
-        <form action="#" onsubmit="return initWebSocket();">
-            <input id="address" value="ws://192.168.0.103/ws">Address</input>
-            <button>Connect</button>
-        </form>
+    <head>
+      <script src="main.js"></script>
 
-          <form action="#" onsubmit="return doSendABCD();">
-            <input id="a" value="0">a</input><br/>
-            <input id="b" value="0">b</input><br/>
-            <input id="c" value="0">c</input><br/>
-            <input id="d" value="0">d</input><br/>
-            <button onclick="doSendABCD()">send</button>
-          </form><br/><br/>
-        
-          <form action="#" onsubmit="return doSendXYZG();">
-            <input type="range" min="-100" max="100" value="80" step="1" class="slider" id="x"/><br/>
-            <input type="range" min="-100" max="200" value="80" step="1" class="slider" id="y"/><br/>
-            <input type="range" min="-100" max="100" value="1" step="1" class="slider" id="z"/><br/>
-            <input type="range" min="0" max="0.1" value="0" step="0.001" class="slider" id="g"/><br/>
-            <button onclick="doSendXYZG()">send</button>
-          </form>
-          <p id="txt"></p>
-        <script>
-          document.getElementById("x").oninput = doSendXYZG;
-          document.getElementById("y").oninput = doSendXYZG;
-          document.getElementById("z").oninput = doSendXYZG;
-          document.getElementById("g").oninput = doSendXYZG;
-        
-        
-          var gateway = document.getElementById("address").value;
+      <script>
+          var gateway = getParams()["websocket-url"] || "ws://192.168.0.103/ws";
           var websocket;
           window.addEventListener('load', onLoad);
         
@@ -48,21 +22,15 @@
         
           function send(a, b, c, d) {
             let ws = websocket;
-            ws.binaryType = 'arraybuffer';
-            const data = new Int16Array(4);
-            data[0] = a*0xFFFF;
-            data[1] = b*0xFFFF;
-            data[2] = c*0xFFFF;
-            data[3] = d*0xFFFF;
-            ws.send(data);
-          }
-        
-          function doSendABCD() {
-            let a = document.getElementById("a").value;
-            let b = document.getElementById("b").value;
-            let c = document.getElementById("c").value;
-            let d = document.getElementById("d").value;
-            send(a, b, c, d);
+            if (ws && ws.readyState == 1) {
+              ws.binaryType = 'arraybuffer';
+              const data = new Int16Array(4);
+              data[0] = a*0xFFFF;
+              data[1] = b*0xFFFF;
+              data[2] = c*0xFFFF;
+              data[3] = d*0xFFFF;
+              ws.send(data);
+            }
           }
         
           let tf = function(n) {
@@ -77,18 +45,16 @@
           let txt = document.getElementById("txt");
           let lastABC;
           let lastTime;
-          function doSendXYZG() {
+          function sendXYZG(x,y,z,g) {
+            x = 80*(1+x*3);
+            y = 80*(1+y*3);
+            z = 80*(0+z*3);
             let t0 = performance.now()
-
-            let x = document.getElementById("x").value;
-            let y = document.getElementById("y").value;
-            let z = document.getElementById("z").value;
-            let g = document.getElementById("g").value;
 
             lastABC = seek([x,y,z],lastABC);
             let [a,b,c] = lastABC;
         
-            txt.innerHTML = `${tf(x)} ${tf(y)} ${tf(z)}<br/>${tf(a)} ${tf(b)} ${tf(c)}`;
+            console.log(`pos ${tf(x)} ${tf(y)} ${tf(z)}<br/>${tf(a)} ${tf(b)} ${tf(c)}`);
         
             if (isNaN(a) || isNaN(b) || isNaN(c)) {
               return;
@@ -102,11 +68,10 @@
            
           function initWebSocket() {
             console.log('Trying to open a WebSocket connection...');
-            gateway = document.getElementById("address").value;
             websocket = new WebSocket(gateway);
             websocket.onopen    = onOpen;
             websocket.onclose   = onClose;
-            websocket.onmessage = onMessage; // <-- add this line
+            websocket.onmessage = onMessage;
           }
           function onOpen(event) {
             console.log('Connection opened');
@@ -116,11 +81,39 @@
             setTimeout(initWebSocket, 2000);
           }
           function onMessage(event) {
-            document.getElementById('state').textContent = event.data;
+            console.log("websocker onMessage", event.data);
           }
           function onLoad(event) {
             initWebSocket();
           }
-        </script>
+      </script>
+    </head>
+    <body>
+      <a-scene>
+        <a-box></a-box>
+        <a-entity id="cameraRig">
+          <a-entity id="acamera" camera wasd-controls look-controls orbit-controls></a-entity>
+          <a-entity id="left-hand"
+                    ui-controller="hand: left"
+                    ui
+                    position-emitter>
+                      <script> //TODO Yeah, I know this isn't the most kosher solution, but I'm not sure how to extend the class/entity system, yet
+                        QuickUI.loadUi(({UI}) => // `UI` is just a convenience abbreviation, equal to QuickUI
+                          UI.FoldLayout({},
+                            UI.PageLayout({autodistribute:true,gridparams:{cols:3,rows:5}},
+                              ...([...Array(100).keys()].map(i => UI.UiButton({text:`${i+1}`, oncontrollerdown:()=>{console.log(i)}})))
+                            ),
+                            UI.UiText({text:"Middle"}),
+                            UI.UiText({text:"Right"})
+                          )
+                        );
+                      </script>
+          </a-entity>
+          <a-entity id="right-hand"
+                    ui-controller="hand: right"
+                    ui>
+          </a-entity>
+        </a-entity>
+      </a-scene>
     </body>
 </html>

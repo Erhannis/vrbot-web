@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aframe": "^1.1.0",
+    "aframe-quick-ui": "^1.0.0",
     "bfgs-algorithm": "^1.0.3",
     "gradient-descent": "github:Erhannis/gradient-descent-js#master",
     "mathjs": "^8.1.0",

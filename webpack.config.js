@@ -17,11 +17,5 @@ module.exports = {
   plugins: PLUGINS,
   devServer: {
     disableHostCheck: true
-  },
-  resolve: {
-      fallback: { "util": require.resolve("util/") },
-      alias: {
-          process: "process/browser"
-      }
   }
 };

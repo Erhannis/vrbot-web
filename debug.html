@@ -1,0 +1,126 @@
+<html>
+    <script src="main.js"></script>
+    <body>
+        <form action="#" onsubmit="return initWebSocket();">
+            <input id="address" value="ws://192.168.0.103/ws">Address</input>
+            <button>Connect</button>
+        </form>
+
+          <form action="#" onsubmit="return doSendABCD();">
+            <input id="a" value="0">a</input><br/>
+            <input id="b" value="0">b</input><br/>
+            <input id="c" value="0">c</input><br/>
+            <input id="d" value="0">d</input><br/>
+            <button onclick="doSendABCD()">send</button>
+          </form><br/><br/>
+        
+          <form action="#" onsubmit="return doSendXYZG();">
+            <input type="range" min="-100" max="100" value="80" step="1" class="slider" id="x"/><br/>
+            <input type="range" min="-100" max="200" value="80" step="1" class="slider" id="y"/><br/>
+            <input type="range" min="-100" max="100" value="1" step="1" class="slider" id="z"/><br/>
+            <input type="range" min="0" max="0.1" value="0" step="0.001" class="slider" id="g"/><br/>
+            <button onclick="doSendXYZG()">send</button>
+          </form>
+          <p id="txt"></p>
+        <script>
+          document.getElementById("x").oninput = doSendXYZG;
+          document.getElementById("y").oninput = doSendXYZG;
+          document.getElementById("z").oninput = doSendXYZG;
+          document.getElementById("g").oninput = doSendXYZG;
+        
+        
+          var gateway = document.getElementById("address").value;
+          var websocket;
+          window.addEventListener('load', onLoad);
+        
+          function clip(lo, val, hi) {
+            return Math.max(lo, Math.min(hi, val));
+          }
+        
+          function angle(a) {
+            return ((((a+Math.PI) % (2*Math.PI))+(2*Math.PI)) % (2*Math.PI))-Math.PI;
+          }
+        
+          function wrap(lo, val, hi) {
+            let width = hi-lo;
+            return ((((val+lo) % width)+width) % width)-lo;
+          }
+        
+          function send(a, b, c, d) {
+            let ws = websocket;
+            ws.binaryType = 'arraybuffer';
+            const data = new Int16Array(4);
+            data[0] = a*0xFFFF;
+            data[1] = b*0xFFFF;
+            data[2] = c*0xFFFF;
+            data[3] = d*0xFFFF;
+            ws.send(data);
+          }
+        
+          function doSendABCD() {
+            let a = document.getElementById("a").value;
+            let b = document.getElementById("b").value;
+            let c = document.getElementById("c").value;
+            let d = document.getElementById("d").value;
+            send(a, b, c, d);
+          }
+        
+          let tf = function(n) {
+            n = n*1;
+            if (n < 0) {
+              return n.toFixed(2);
+            } else {
+              return `+${n.toFixed(2)}`;
+            }
+          };
+
+          let txt = document.getElementById("txt");
+          let lastABC;
+          let lastTime;
+          function doSendXYZG() {
+            let t0 = performance.now()
+
+            let x = document.getElementById("x").value;
+            let y = document.getElementById("y").value;
+            let z = document.getElementById("z").value;
+            let g = document.getElementById("g").value;
+
+            lastABC = seek([x,y,z],lastABC);
+            let [a,b,c] = lastABC;
+        
+            txt.innerHTML = `${tf(x)} ${tf(y)} ${tf(z)}<br/>${tf(a)} ${tf(b)} ${tf(c)}`;
+        
+            if (isNaN(a) || isNaN(b) || isNaN(c)) {
+              return;
+            }
+            
+            send(a, b, c, g);
+
+            let t1 = performance.now()
+            console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
+          }
+           
+          function initWebSocket() {
+            console.log('Trying to open a WebSocket connection...');
+            gateway = document.getElementById("address").value;
+            websocket = new WebSocket(gateway);
+            websocket.onopen    = onOpen;
+            websocket.onclose   = onClose;
+            websocket.onmessage = onMessage; // <-- add this line
+          }
+          function onOpen(event) {
+            console.log('Connection opened');
+          }
+          function onClose(event) {
+            console.log('Connection closed');
+            setTimeout(initWebSocket, 2000);
+          }
+          function onMessage(event) {
+            document.getElementById('state').textContent = event.data;
+          }
+          function onLoad(event) {
+            initWebSocket();
+          }
+        </script>
+    </body>
+</html>
